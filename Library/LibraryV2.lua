@@ -1116,9 +1116,7 @@ end
 local FetchIcons, Icons = pcall(function()
 	return ((loadstring(
 		game:HttpGet(
-			"https://raw.githubusercontent.com/"
-			.. "deividcomsono/lucide-roblox-direct/"
-			.. "refs/heads/main/source.lua"
+			BaseURL
 		)
 	)))()
 end)

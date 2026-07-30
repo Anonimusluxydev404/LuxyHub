@@ -2,8 +2,8 @@
 	LuxyHub — Misc Manager (Universal)
 	Repository: https://github.com/Anonimusluxydev404/LuxyHub
 
-	A plug-and-play misc/utility module for any LuxyHub script.
-	Simply load and setup:
+	Plug-and-play misc/utility module for any LuxyHub script.
+	Usage:
 
 		local Misc = loadstring(game:HttpGet(
 			"https://raw.githubusercontent.com/Anonimusluxydev404/LuxyHub/refs/heads/main/Manager/Misc.lua"
@@ -20,6 +20,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
@@ -35,6 +36,8 @@ local S = {
 	ESP = false,
 	ESPConn = nil,
 	ESPDrawings = {},
+	ESPBoxColor = Color3.fromRGB(0, 255, 0),
+	ESPLineColor = Color3.fromRGB(255, 255, 255),
 
 	Fly = false,
 	FlyConn = nil,
@@ -45,7 +48,8 @@ local S = {
 	InfJumpConn = nil,
 
 	AntiAFK = false,
-	AntiAFKConn = nil,
+	AntiAFKIdledConn = nil,
+	AntiAFKHeartConn = nil,
 
 	FPSBoost = false,
 	FPSOld = {},
@@ -76,21 +80,16 @@ local function ToggleESP(on)
 		S.ESPConn = RunService.RenderStepped:Connect(function()
 			if not Camera then
 				Camera = Workspace.CurrentCamera
+				if not Camera then return end
 			end
 			local vpSize = Camera.ViewportSize
 
 			for _, plr in Players:GetPlayers() do
-				if plr == LocalPlayer then
-					continue
-				end
+				if plr == LocalPlayer then continue end
 				local char = plr.Character
-				if not char then
-					continue
-				end
+				if not char then continue end
 				local hrp = char:FindFirstChild("HumanoidRootPart")
-				if not hrp then
-					continue
-				end
+				if not hrp then continue end
 
 				local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
 				if not onScreen then
@@ -103,28 +102,21 @@ local function ToggleESP(on)
 				end
 
 				if not S.ESPDrawings[plr] then
-					local color = Color3.fromRGB(0, 255, 0)
-					if plr.TeamColor and LocalPlayer.TeamColor then
-						if plr.TeamColor ~= LocalPlayer.TeamColor then
-							color = Color3.fromRGB(255, 80, 80)
-						end
-					end
-
 					local box = Drawing.new("Square")
 					box.Thickness = 1
 					box.Filled = false
-					box.Color = color
+					box.Color = S.ESPBoxColor
 					box.Transparency = 0.75
 
 					local txt = Drawing.new("Text")
 					txt.Center = true
 					txt.Outline = true
 					txt.Size = 13
-					txt.Color = color
+					txt.Color = S.ESPBoxColor
 
 					local line = Drawing.new("Line")
 					line.Thickness = 1
-					line.Color = Color3.fromRGB(255, 255, 255)
+					line.Color = S.ESPLineColor
 					line.Transparency = 0.3
 
 					S.ESPDrawings[plr] = { Box = box, Text = txt, Line = line }
@@ -138,17 +130,17 @@ local function ToggleESP(on)
 				drawings.Box.Visible = true
 				drawings.Box.Size = boxSize
 				drawings.Box.Position = boxPos
+				drawings.Box.Color = S.ESPBoxColor
 
 				drawings.Text.Visible = true
 				drawings.Text.Position = Vector2.new(pos.X, boxPos.Y - 15)
-				drawings.Text.Text = plr.Name
-					.. " ["
-					.. math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
-					.. "m]"
+				drawings.Text.Text = plr.Name .. " [" .. math.floor((Camera.CFrame.Position - hrp.Position).Magnitude) .. "m]"
+				drawings.Text.Color = S.ESPBoxColor
 
 				drawings.Line.Visible = true
 				drawings.Line.From = Vector2.new(vpSize.X / 2, vpSize.Y)
 				drawings.Line.To = Vector2.new(pos.X, pos.Y)
+				drawings.Line.Color = S.ESPLineColor
 			end
 		end)
 	else
@@ -167,15 +159,10 @@ local function ToggleFly(on)
 	if on then
 		local char = LocalPlayer.Character
 		if not char then
-			repeat
-				task.wait()
-				char = LocalPlayer.Character
-			until char
+			repeat task.wait() char = LocalPlayer.Character until char
 		end
 		local hrp = char:FindFirstChild("HumanoidRootPart")
-		if not hrp then
-			return
-		end
+		if not hrp then return end
 
 		local bp = Instance.new("BodyPosition")
 		bp.Position = hrp.Position
@@ -198,13 +185,9 @@ local function ToggleFly(on)
 				ToggleFly(false)
 				return
 			end
-
-			if not Camera then
-				Camera = Workspace.CurrentCamera
-			end
+			if not Camera then Camera = Workspace.CurrentCamera end
 
 			local move = Vector3.new()
-
 			if UserInputService:IsKeyDown(Enum.KeyCode.W) then
 				move = move + Camera.CFrame.LookVector * Vector3.new(1, 0, 1)
 			end
@@ -220,10 +203,8 @@ local function ToggleFly(on)
 			if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
 				move = move + Vector3.new(0, 1, 0)
 			end
-			if
-				UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
-				or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
-			then
+			if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+				or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then
 				move = move + Vector3.new(0, -1, 0)
 			end
 
@@ -253,9 +234,7 @@ local function ToggleInfJump(on)
 	if on then
 		S.InfJumpConn = UserInputService.JumpRequest:Connect(function()
 			local char = LocalPlayer.Character
-			if not char then
-				return
-			end
+			if not char then return end
 			local hrp = char:FindFirstChild("HumanoidRootPart")
 			if hrp then
 				hrp.Velocity = Vector3.new(hrp.Velocity.X, 50, hrp.Velocity.Z)
@@ -270,115 +249,170 @@ local function ToggleInfJump(on)
 end
 
 -- ====================================================================
--- Feature: Anti AFK (VirtualUser)
+-- Feature: Anti AFK (100% work)
 -- ====================================================================
 local function ToggleAntiAFK(on)
 	if on then
+		-- Method 1: Hook Idled
 		LocalPlayer.Idled:Connect(function()
+			task.spawn(function()
+				task.wait(0.1)
+				VirtualUser:CaptureController()
+				VirtualUser:ClickButton1(Vector2.new())
+				task.wait(0.1)
+				VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+				task.wait(0.05)
+				VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+			end)
+		end)
+
+		-- Method 2: Heartbeat keep-alive
+		S.AntiAFKHeartConn = RunService.Heartbeat:Connect(function()
+			local char = LocalPlayer.Character
+			if not char then return end
+			local hum = char:FindFirstChild("Humanoid")
+			if hum then
+				if hum.PlatformStand then hum.PlatformStand = false end
+				if hum.Sit then hum.Sit = false end
+			end
+			-- Simulate player activity
 			VirtualUser:CaptureController()
 			VirtualUser:ClickButton1(Vector2.new())
 		end)
-
-		S.AntiAFKConn = RunService.Stepped:Connect(function()
-			local char = LocalPlayer.Character
-			if not char then
-				return
-			end
-			local hum = char:FindFirstChild("Humanoid")
-			if hum then
-				if hum.PlatformStand then
-					hum.PlatformStand = false
-				end
-				if hum.Sit then
-					hum.Sit = false
-				end
-			end
-		end)
 	else
-		if S.AntiAFKConn then
-			S.AntiAFKConn:Disconnect()
-			S.AntiAFKConn = nil
+		if S.AntiAFKHeartConn then
+			S.AntiAFKHeartConn:Disconnect()
+			S.AntiAFKHeartConn = nil
 		end
 	end
 end
 
 -- ====================================================================
--- Feature: FPS Boost
+-- Feature: FPS Boost (brutal)
 -- ====================================================================
 local function ToggleFPSBoost(on)
 	if on then
 		S.FPSOld = {
 			GlobalShadows = Lighting.GlobalShadows,
 			FogEnd = Lighting.FogEnd,
+			FogStart = Lighting.FogStart,
 			Ambient = Lighting.Ambient,
 			Brightness = Lighting.Brightness,
 			ColorShift_Top = Lighting.ColorShift_Top,
 			ColorShift_Bottom = Lighting.ColorShift_Bottom,
+			OutdoorAmbient = Lighting.OutdoorAmbient,
+			Technology = Lighting.Technology,
+			ClockTime = Lighting.ClockTime,
+			GeographicLatitude = Lighting.GeographicLatitude,
+			ExposureCompensation = Lighting.ExposureCompensation,
 		}
 
+		-- Kill visuals
 		Lighting.GlobalShadows = false
 		Lighting.FogEnd = 1e10
-		Lighting.Brightness = 1.5
+		Lighting.FogStart = 1e10
+		Lighting.Brightness = 2
+		Lighting.Ambient = Color3.new(1, 1, 1)
+		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+		pcall(function() Lighting.Technology = Enum.Technology.Compat end)
+		Lighting.ClockTime = 14
+		Lighting.GeographicLatitude = 0
+		Lighting.ExposureCompensation = 0
 
-		-- Disable terrain decorations
-		Workspace.DecalLifetime = 0
+		-- Decal & terrain
+		pcall(function() Workspace.DecalLifetime = 0 end)
 
-		-- Lower graphics
+		-- Graphics settings — max performance
 		pcall(function()
 			local rs = game:GetService("RenderSettings")
 			rs.QualityLevel = 1
 			rs.MaterialQualityLevel = Enum.MaterialQuality.Low
 		end)
+
+		-- Force all parts to Plastic (burik / ugly)
+		task.spawn(function()
+			while S.FPSBoost do
+				task.wait(0.5)
+				for _, v in Workspace:GetDescendants() do
+					if v:IsA("BasePart") and not v:IsA("Terrain") then
+						pcall(function()
+							v.Material = Enum.Material.Plastic
+							v.CastShadow = false
+						end)
+					end
+				end
+			end
+		end)
 	else
 		for k, v in next, S.FPSOld do
-			pcall(function()
-				Lighting[k] = v
-			end)
+			pcall(function() Lighting[k] = v end)
 		end
 		S.FPSOld = {}
 	end
 end
 
 -- ====================================================================
--- Feature: RTX Mode
+-- Feature: RTX Mode (PC Dewa — max realistic)
 -- ====================================================================
 local function ToggleRTXMode(on)
 	if on then
 		S.RTXOld = {
 			GlobalShadows = Lighting.GlobalShadows,
+			FogEnd = Lighting.FogEnd,
+			FogStart = Lighting.FogStart,
 			Ambient = Lighting.Ambient,
 			Brightness = Lighting.Brightness,
-			FogEnd = Lighting.FogEnd,
 			ColorShift_Top = Lighting.ColorShift_Top,
 			ColorShift_Bottom = Lighting.ColorShift_Bottom,
 			Technology = Lighting.Technology,
 			OutdoorAmbient = Lighting.OutdoorAmbient,
+			ClockTime = Lighting.ClockTime,
+			GeographicLatitude = Lighting.GeographicLatitude,
+			ExposureCompensation = Lighting.ExposureCompensation,
+			EnvironmentDiffuseScale = Lighting.EnvironmentDiffuseScale,
+			EnvironmentSpecularScale = Lighting.EnvironmentSpecularScale,
 		}
 
+		-- Future lighting
+		pcall(function() Lighting.Technology = Enum.Technology.Future end)
 		Lighting.GlobalShadows = true
-		Lighting.Ambient = Color3.fromRGB(80, 80, 80)
-		Lighting.Brightness = 2
+		Lighting.Ambient = Color3.fromRGB(60, 60, 70)
+		Lighting.Brightness = 1.8
+		Lighting.OutdoorAmbient = Color3.fromRGB(130, 140, 160)
 		Lighting.FogEnd = 1e10
-		pcall(function()
-			Lighting.Technology = Enum.Technology.Future
-		end)
+		Lighting.FogStart = 0
+		Lighting.ClockTime = 14.5
+		Lighting.GeographicLatitude = 41.9
+		Lighting.ExposureCompensation = 0.5
+		Lighting.EnvironmentDiffuseScale = 1.2
+		Lighting.EnvironmentSpecularScale = 1.5
 
-		-- Max graphics
+		-- Max graphics quality
 		pcall(function()
 			local rs = game:GetService("RenderSettings")
 			rs.QualityLevel = 21
 			rs.MaterialQualityLevel = Enum.MaterialQuality.High
 		end)
 
-		-- Better ambient
-		pcall(function()
-			Lighting.OutdoorAmbient = Color3.fromRGB(150, 150, 150)
+		-- Force high-quality materials on all parts
+		task.spawn(function()
+			while S.RTXMode do
+				task.wait(0.5)
+				for _, v in Workspace:GetDescendants() do
+					if v:IsA("BasePart") and not v:IsA("Terrain") then
+						pcall(function()
+							if v.Material == Enum.Material.Plastic then
+								v.Material = Enum.Material.SmoothPlastic
+							end
+							v.CastShadow = true
+						end)
+					end
+				end
+			end
 		end)
 	else
 		for k, v in next, S.RTXOld do
-			pcall(function()
-				Lighting[k] = v
-			end)
+			pcall(function() Lighting[k] = v end)
 		end
 		S.RTXOld = {}
 	end
@@ -402,9 +436,7 @@ local function ToggleBlackScreen(on)
 		frame.Parent = gui
 
 		local parent = CoreGui
-		if not parent then
-			parent = LocalPlayer:FindFirstChild("PlayerGui")
-		end
+		if not parent then parent = LocalPlayer:FindFirstChild("PlayerGui") end
 		if parent then
 			gui.Parent = parent
 			S.BScreenObj = gui
@@ -421,73 +453,98 @@ end
 -- Setup: Builds the Misc tab UI and wires features
 -- ====================================================================
 function Misc:Setup(Library, Tab)
-	-- General controls (left side)
-	local General = Tab:AddLeftGroupbox("General", "user")
+	-- ================================================================
+	-- GENERAL
+	-- ================================================================
+	local General = Tab:AddLeftGroupbox("General", "zap")
 
 	General:AddToggle("Misc_ESP", {
 		Text = "ESP",
-		Tooltip = "Show player ESP boxes with distance",
-		Callback = function(v)
-			ToggleESP(v)
-		end,
+		Tooltip = "Show player ESP boxes & tracer lines",
+		Callback = function(v) ToggleESP(v) end,
 	})
 
 	General:AddToggle("Misc_Fly", {
 		Text = "Fly",
-		Tooltip = "Flight mode (WASD move, Space up, Shift down)",
-		Callback = function(v)
-			ToggleFly(v)
-		end,
+		Tooltip = "Flight mode — WASD move, Space up, Shift down",
+		Callback = function(v) ToggleFly(v) end,
 	})
 
 	General:AddToggle("Misc_InfJump", {
 		Text = "Infinite Jump",
-		Tooltip = "Hold Space to jump infinitely",
-		Callback = function(v)
-			ToggleInfJump(v)
-		end,
+		Tooltip = "Jump infinitely by holding Space",
+		Callback = function(v) ToggleInfJump(v) end,
 	})
 
 	General:AddToggle("Misc_AntiAFK", {
 		Text = "Anti AFK",
-		Tooltip = "Prevent being kicked for being idle",
-		Callback = function(v)
-			ToggleAntiAFK(v)
-		end,
+		Tooltip = "Prevent auto-kick for being idle",
+		Callback = function(v) ToggleAntiAFK(v) end,
 	})
 
 	General:AddDivider()
-	General:AddLabel("Controls: WASD to move, Space up, Shift down")
+	General:AddLabel("Fly: WASD to move | Space = Up | Shift = Down")
 
-	-- Performance controls (right side)
-	local Perf = Tab:AddRightGroupbox("Performance", "zap")
+	-- ================================================================
+	-- ESP SETTINGS
+	-- ================================================================
+	local ESPSettings = General:AddLabel("ESP Color")
+	ESPSettings:AddColorPicker("Misc_ESP_BoxColor", {
+		Default = Color3.fromRGB(0, 255, 0),
+		Title = "Box Color",
+		Callback = function(v)
+			S.ESPBoxColor = v
+		end,
+	})
+
+	ESPSettings:AddColorPicker("Misc_ESP_LineColor", {
+		Default = Color3.fromRGB(255, 255, 255),
+		Title = "Tracer Line Color",
+		Callback = function(v)
+			S.ESPLineColor = v
+		end,
+	})
+
+	-- ================================================================
+	-- PERFORMANCE
+	-- ================================================================
+	local Perf = Tab:AddRightGroupbox("Performance", "monitor")
+	-- Note: "monitor" is a lucide icon name
 
 	Perf:AddToggle("Misc_FPSBoost", {
 		Text = "FPS Boost",
-		Tooltip = "Disable shadows & effects for higher FPS",
+		Tooltip = "Brutal FPS optimization — All materials → Plastic, shadows off",
 		Callback = function(v)
+			if v and S.RTXMode then
+				Library:Notify("Turn off RTX Mode first!", 3)
+				return
+			end
+			S.FPSBoost = v
 			ToggleFPSBoost(v)
 		end,
 	})
 
 	Perf:AddToggle("Misc_RTXMode", {
 		Text = "RTX Mode",
-		Tooltip = "Max out graphics quality",
+		Tooltip = "Max graphics — Future lighting, high quality, PC Dewa only",
 		Callback = function(v)
+			if v and S.FPSBoost then
+				Library:Notify("Turn off FPS Boost first!", 3)
+				return
+			end
+			S.RTXMode = v
 			ToggleRTXMode(v)
 		end,
 	})
 
 	Perf:AddToggle("Misc_BlackScreen", {
 		Text = "Black Screen",
-		Tooltip = "Cover the screen with a black overlay",
-		Callback = function(v)
-			ToggleBlackScreen(v)
-		end,
+		Tooltip = "Full black overlay on screen",
+		Callback = function(v) ToggleBlackScreen(v) end,
 	})
 
 	Perf:AddDivider()
-	Perf:AddLabel("Note: FPS Boost & RTX Mode are mutually exclusive.")
+	Perf:AddLabel("Tip: FPS Boost & RTX Mode can't be on at the same time.")
 end
 
 return Misc

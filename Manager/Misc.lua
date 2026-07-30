@@ -460,30 +460,23 @@ function Misc:Setup(Library, Tab)
 
 	General:AddToggle("Misc_ESP", {
 		Text = "ESP",
-		Tooltip = "Show player ESP boxes & tracer lines",
 		Callback = function(v) ToggleESP(v) end,
 	})
 
 	General:AddToggle("Misc_Fly", {
 		Text = "Fly",
-		Tooltip = "Flight mode — WASD move, Space up, Shift down",
 		Callback = function(v) ToggleFly(v) end,
 	})
 
 	General:AddToggle("Misc_InfJump", {
 		Text = "Infinite Jump",
-		Tooltip = "Jump infinitely by holding Space",
 		Callback = function(v) ToggleInfJump(v) end,
 	})
 
 	General:AddToggle("Misc_AntiAFK", {
 		Text = "Anti AFK",
-		Tooltip = "Prevent auto-kick for being idle",
 		Callback = function(v) ToggleAntiAFK(v) end,
 	})
-
-	General:AddDivider()
-	General:AddLabel("Fly: WASD to move | Space = Up | Shift = Down")
 
 	-- ================================================================
 	-- ESP SETTINGS
@@ -509,11 +502,9 @@ function Misc:Setup(Library, Tab)
 	-- PERFORMANCE
 	-- ================================================================
 	local Perf = Tab:AddRightGroupbox("Performance", "monitor")
-	-- Note: "monitor" is a lucide icon name
 
 	Perf:AddToggle("Misc_FPSBoost", {
 		Text = "FPS Boost",
-		Tooltip = "Brutal FPS optimization — All materials → Plastic, shadows off",
 		Callback = function(v)
 			if v and S.RTXMode then
 				Library:Notify("Turn off RTX Mode first!", 3)
@@ -526,7 +517,6 @@ function Misc:Setup(Library, Tab)
 
 	Perf:AddToggle("Misc_RTXMode", {
 		Text = "RTX Mode",
-		Tooltip = "Max graphics — Future lighting, high quality, PC Dewa only",
 		Callback = function(v)
 			if v and S.FPSBoost then
 				Library:Notify("Turn off FPS Boost first!", 3)
@@ -539,12 +529,8 @@ function Misc:Setup(Library, Tab)
 
 	Perf:AddToggle("Misc_BlackScreen", {
 		Text = "Black Screen",
-		Tooltip = "Full black overlay on screen",
 		Callback = function(v) ToggleBlackScreen(v) end,
 	})
-
-	Perf:AddDivider()
-	Perf:AddLabel("Tip: FPS Boost & RTX Mode can't be on at the same time.")
 end
 
 return Misc

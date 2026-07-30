@@ -360,7 +360,7 @@ local Templates = {
 
 		Position = UDim2.fromOffset(6, 6),
 		Size = UDim2.fromOffset(720, 600),
-			IconSize = UDim2.fromOffset(36, 36),
+		IconSize = UDim2.fromOffset(36, 36),
 
 		AutoShow = true,
 		Center = true,
@@ -421,7 +421,7 @@ local Templates = {
 	Loading = {
 		Title = "mspaint",
 		Icon = 95816097006870,
-			IconSize = UDim2.fromOffset(36, 36),
+		IconSize = UDim2.fromOffset(36, 36),
 
 		LoadingIcon = CustomImageManager.GetAsset("LoadingIcon"),
 		LoadingIconColor = nil,
@@ -8605,7 +8605,7 @@ function Library:CreateWindow(WindowInfo)
 
 		New("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
-				HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 			Padding = UDim.new(0, 8),
 			Parent = RightWrapper,
@@ -8660,144 +8660,150 @@ function Library:CreateWindow(WindowInfo)
 			Parent = CurrentTabInfo,
 		})
 
-		
-			--// Top Bar Stats
-			TopStatsContainer = New("Frame", {
-				BackgroundTransparency = 1,
-				Size = UDim2.new(0, 0, 1, 0),
-				Parent = RightWrapper,
-			})
-			New("UIFlexItem", {
-				FlexMode = Enum.UIFlexMode.Grow,
-				Parent = TopStatsContainer,
-			})
-			New("UIListLayout", {
-				FillDirection = Enum.FillDirection.Horizontal,
-				HorizontalAlignment = Enum.HorizontalAlignment.Right,
-				VerticalAlignment = Enum.VerticalAlignment.Center,
-				Padding = UDim.new(0, 8),
-				Parent = TopStatsContainer,
-			})
-			New("UIPadding", {
-				PaddingTop = UDim.new(0, 10),
-				Parent = TopStatsContainer,
-			})
-			
-			-- Badge helper
-			local function CreateBadge(Text)
-				local Badge = New("TextLabel", {
-					BackgroundColor3 = "MainColor",
-					BackgroundTransparency = 0.5,
-					Size = UDim2.new(0, 0, 0, 22),
-					AutomaticSize = Enum.AutomaticSize.X,
-					Text = Text,
-					TextSize = 11,
-					TextTransparency = 0.3,
-					Parent = TopStatsContainer,
-				})
-				New("UICorner", {
-					CornerRadius = UDim.new(0, 4),
-					Parent = Badge,
-				})
-				New("UIStroke", {
-					Color = "OutlineColor",
-					Thickness = 1,
-					Parent = Badge,
-				})
-				New("UIPadding", {
-					PaddingLeft = UDim.new(0, 8),
-					PaddingRight = UDim.new(0, 8),
-					Parent = Badge,
-				})
-				return Badge
-			end
-			
-			local function ColorToHex(c)
-				return string.format("#%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
-			end
-			local AccentHex = ColorToHex(Library.Scheme.AccentColor)
-			-- Stats labels
-			local FPSBadge = CreateBadge("<font color='" .. AccentHex .. "'>FPS:</font> 0")
-			local PingBadge = CreateBadge("<font color='" .. AccentHex .. "'>Ping:</font> 0ms")
-			local ServerBadge = CreateBadge("<font color='" .. AccentHex .. "'>Server:</font> v2.1.2")
-			
-			-- Auto-update FPS & Ping
-			coroutine.wrap(function()
-				local RunService = cloneref(game:GetService("RunService"))
-				local Stats = cloneref(game:GetService("Stats"))
-				local FrameCount = 0
-				local TimeCount = 0
-				while RunService.RenderStepped:Wait() do
-					FrameCount = FrameCount + 1
-					TimeCount = TimeCount + task.wait()
-					if TimeCount >= 0.5 then
-						local FPS = math.floor(FrameCount / TimeCount + 0.5)
-						FrameCount = 0
-						TimeCount = 0
-						pcall(function()
-							FPSBadge.Text = "<font color='" .. AccentHex .. "'>FPS:</font> " .. FPS
-							local Ping = math.floor(Stats:GetNetworkPing() * 1000 + 0.5)
-							PingBadge.Text = "<font color='" .. AccentHex .. "'>Ping:</font> " .. Ping .. "ms"
-						end)
-					end
-				end
-			end)()
 
-			--// Search Bar (Right side)
-			local SearchBox = New("TextBox", {
+		--// Top Bar Stats
+		TopStatsContainer = New("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(0, 0, 1, 0),
+			Parent = RightWrapper,
+		})
+		New("UIFlexItem", {
+			FlexMode = Enum.UIFlexMode.Grow,
+			Parent = TopStatsContainer,
+		})
+		New("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 8),
+			Parent = TopStatsContainer,
+		})
+		New("UIPadding", {
+			PaddingTop = UDim.new(0, 10),
+			Parent = TopStatsContainer,
+		})
+
+		-- Badge helper
+		local function CreateBadge(Text)
+			local Badge = New("TextLabel", {
 				BackgroundColor3 = "MainColor",
-				PlaceholderText = "Search",
-				Size = UDim2.new(0, 280, 0, 34),
-				TextSize = 13,
-				Visible = not (WindowInfo.DisableSearch or false),
-				Parent = RightWrapper,
+				BackgroundTransparency = 0.5,
+				Size = UDim2.new(0, 0, 0, 22),
+				AutomaticSize = Enum.AutomaticSize.X,
+				Text = Text,
+				TextSize = 11,
+				TextTransparency = 0.3,
+				Parent = TopStatsContainer,
 			})
-			New("UIFlexItem", {
-				FlexMode = Enum.UIFlexMode.Shrink,
-				Parent = SearchBox,
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 4),
+				Parent = Badge,
 			})
-			table.insert(
-				Library.Corners,
-				New("UICorner", {
-					CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-					Parent = SearchBox,
-				})
-			)
 			New("UIStroke", {
 				Color = "OutlineColor",
+				Thickness = 1,
+				Parent = Badge,
+			})
+			New("UIPadding", {
+				PaddingLeft = UDim.new(0, 8),
+				PaddingRight = UDim.new(0, 8),
+				Parent = Badge,
+			})
+			return Badge
+		end
+
+		local function ColorToHex(c)
+			return string.format("#%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
+		end
+		local AccentHex = ColorToHex(Library.Scheme.AccentColor)
+		-- Stats labels
+		local FPSBadge = CreateBadge("<font color='" .. AccentHex .. "'>FPS:</font> 0")
+		local PingBadge = CreateBadge("<font color='" .. AccentHex .. "'>Ping:</font> 0ms")
+		local ServerBadge = CreateBadge("<font color='" .. AccentHex .. "'>Server:</font> v2.1.2")
+
+		-- Auto-update FPS & Ping
+		coroutine.wrap(function()
+			local RunService = cloneref(game:GetService("RunService"))
+			local Stats = cloneref(game:GetService("Stats"))
+			local FrameCount = 0
+			local TimeCount = 0
+			while RunService.RenderStepped:Wait() do
+				FrameCount = FrameCount + 1
+				TimeCount = TimeCount + task.wait()
+				if TimeCount >= 0.5 then
+					local FPS = math.floor(FrameCount / TimeCount + 0.5)
+					FrameCount = 0
+					TimeCount = 0
+					pcall(function()
+						FPSBadge.Text = "<font color='" .. AccentHex .. "'>FPS:</font> " .. FPS
+						local Ping = math.floor(Stats:GetNetworkPing() * 1000 + 0.5)
+						PingBadge.Text = "<font color='" .. AccentHex .. "'>Ping:</font> " .. Ping .. "ms"
+					end)
+				end
+			end
+		end)()
+
+		--// Search Bar (Right side)
+		local SearchBox = New("TextBox", {
+			BackgroundColor3 = "MainColor",
+			PlaceholderText = "Search",
+			Size = UDim2.new(0, 280, 0, 34),
+			TextSize = 13,
+			Visible = not (WindowInfo.DisableSearch or false),
+			Parent = RightWrapper,
+		})
+		New("UIFlexItem", {
+			FlexMode = Enum.UIFlexMode.Shrink,
+			Parent = SearchBox,
+		})
+		table.insert(
+			Library.Corners,
+			New("UICorner", {
+				CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
 				Parent = SearchBox,
 			})
-			local SearchIcon = Library:GetIcon("search")
-			if SearchIcon then
-				New("ImageLabel", {
-					Image = SearchIcon.Url,
-					ImageColor3 = "FontColor",
-					ImageRectOffset = SearchIcon.ImageRectOffset,
-					ImageRectSize = SearchIcon.ImageRectSize,
-					ImageTransparency = 0.5,
-					Size = UDim2.fromScale(1, 1),
-					SizeConstraint = Enum.SizeConstraint.RelativeXY,
-					Parent = SearchBox,
-				})
-			end
-			
-			--// Search text changed
-			Library:GiveSignal(SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-				Library:UpdateSearch(SearchBox.Text)
-			end))
-			
-			--// Auto-hide badges on resize
-			local ResizeConn
-			ResizeConn = RightWrapper:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-				local availWidth = RightWrapper.AbsoluteSize.X
-				local searchW = SearchBox.AbsoluteSize.X
-				local otherSpace = availWidth - searchW - 24
-				
-				ServerBadge.Visible = otherSpace > 200
-				PingBadge.Visible = otherSpace > 120
-				FPSBadge.Visible = true
-			end)
-			table.insert(Library.Signals, ResizeConn)
+		)
+		New("UIStroke", {
+			Color = "OutlineColor",
+			Parent = SearchBox,
+		})
+		New("UIPadding", {
+			PaddingRight = UDim.new(0, 32),
+			Parent = SearchBox,
+		})
+		local SearchIcon = Library:GetIcon("search")
+		if SearchIcon then
+			New("ImageLabel", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Image = SearchIcon.Url,
+				ImageColor3 = "FontColor",
+				ImageRectOffset = SearchIcon.ImageRectOffset,
+				ImageRectSize = SearchIcon.ImageRectSize,
+				ImageTransparency = 0.35,
+				Position = UDim2.new(1, -10, 0.5, 0),
+				Size = UDim2.fromOffset(18, 18),
+				Parent = SearchBox,
+			})
+		end
+
+
+		--// Search text changed
+		Library:GiveSignal(SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+			Library:UpdateSearch(SearchBox.Text)
+		end))
+
+		--// Auto-hide badges on resize
+		local ResizeConn
+		ResizeConn = RightWrapper:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+			local availWidth = RightWrapper.AbsoluteSize.X
+			local searchW = SearchBox.AbsoluteSize.X
+			local otherSpace = availWidth - searchW - 24
+
+			ServerBadge.Visible = otherSpace > 200
+			PingBadge.Visible = otherSpace > 120
+			FPSBadge.Visible = true
+		end)
+		table.insert(Library.Signals, ResizeConn)
 		if MoveIcon then
 			New("ImageLabel", {
 				AnchorPoint = Vector2.new(1, 0.5),
@@ -9163,7 +9169,7 @@ function Library:CreateWindow(WindowInfo)
 			TabButton = New("TextButton", {
 				BackgroundColor3 = "MainColor",
 				BackgroundTransparency = 1,
-					Size = UDim2.new(1, 0, 0, 44),
+				Size = UDim2.new(1, 0, 0, 44),
 				Text = "",
 				Parent = Tabs,
 			})
@@ -9183,7 +9189,7 @@ function Library:CreateWindow(WindowInfo)
 				TextSize = 16,
 				TextTransparency = 0.5,
 				TextXAlignment = Enum.TextXAlignment.Left,
-					Visible = false,
+				Visible = false,
 				Parent = TabButton,
 			})
 
@@ -9668,7 +9674,7 @@ function Library:CreateWindow(WindowInfo)
 					Size = UDim2.new(0.5, 0, 0, 2),
 				})
 				ActiveLine.Visible = false
-			
+
 
 				local Container = New("Frame", {
 					BackgroundTransparency = 1,
@@ -10313,7 +10319,7 @@ function Library:CreateWindow(WindowInfo)
 			TabButton = New("TextButton", {
 				BackgroundColor3 = "MainColor",
 				BackgroundTransparency = 1,
-					Size = UDim2.new(1, 0, 0, 44),
+				Size = UDim2.new(1, 0, 0, 44),
 				Text = "",
 				Parent = Tabs,
 			})
@@ -10333,7 +10339,7 @@ function Library:CreateWindow(WindowInfo)
 				TextSize = 16,
 				TextTransparency = 0.5,
 				TextXAlignment = Enum.TextXAlignment.Left,
-					Visible = false,
+				Visible = false,
 				Parent = TabButton,
 			})
 
@@ -11117,10 +11123,6 @@ function Library:CreateWindow(WindowInfo)
 			if Value == true then
 				return
 			end
-
-			if not Library.Toggled then
-				return
-			end
 		end
 
 		if typeof(Value) == "boolean" then
@@ -11128,15 +11130,6 @@ function Library:CreateWindow(WindowInfo)
 		else
 			Library.Toggled = not Library.Toggled
 		end
-
-	-- Animate Floating Toggle stroke color with tween
-	if Library.FloatingStrokeRef then
-		local TargetColor = Library.Toggled and Library.Scheme.AccentColor or Library.Scheme.OutlineColor
-		TweenService:Create(Library.FloatingStrokeRef, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Color = TargetColor,
-		}):Play()
-	end
-
 
 		if Library.Animations and Library.Animations.ToggleWindow == true then
 			local FadeTime = Library.WindowAnimationInfo.Time
@@ -11218,120 +11211,134 @@ function Library:CreateWindow(WindowInfo)
 
 	function Library:Toggle(Value: boolean?)
 		return Window:Toggle(Value)
-end
+	end
 
-
-	--// Floating Toggle Button (Outer Toggle)
-	local FloatingToggle = New("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0),
-		BackgroundColor3 = "MainColor",
-		Position = UDim2.new(0.5, 0, 0, 12),
-		Size = UDim2.fromOffset(44, 44),
-		Parent = ScreenGui,
-		ZIndex = 10000,
-	})
-	table.insert(Library.Corners, New("UICorner", {
-		CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-		Parent = FloatingToggle,
-	}))
-	local FloatingStroke = New("UIStroke", {
-		Color = "OutlineColor",
-		Thickness = 2,
-		Parent = FloatingToggle,
-	})
-	FloatingStroke.Color = Library.Toggled and Library.Scheme.AccentColor or Library.Scheme.OutlineColor
-
-	-- Store references for sync
-	Library.FloatingToggleRef = FloatingToggle
-	Library.FloatingStrokeRef = FloatingStroke
-
-	Library:MakeDraggable(FloatingToggle, FloatingToggle, true)
-
-	-- Icon inside floating toggle (always present, synced with window icon)
-	local FloatIcon
-	if WindowInfo.Icon then
-		local IconData = Library:GetCustomIcon(WindowInfo.Icon)
-		FloatIcon = New("ImageLabel", {
-			Image = IconData.Url,
-			ImageRectOffset = IconData.ImageRectOffset,
-			ImageRectSize = IconData.ImageRectSize,
-			Size = UDim2.fromOffset(30, 30),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			BackgroundTransparency = 1,
-			Parent = FloatingToggle,
+	do
+		local ToggleBtnTexture =
+			"rbxassetid://119236006737744"
+		local ToggleBtnSize = 46
+		local ToggleBtnIconSize = 45
+		local ToggleBtnFrame = New("ImageButton", {
+			AnchorPoint = Vector2.new(0.5, 0),
+			BackgroundColor3 = "BackgroundColor",
+			Position = UDim2.new(0.5, 0, 0, 15),
+			Size = UDim2.fromOffset(
+				ToggleBtnSize,
+				ToggleBtnSize
+			),
+			AutoButtonColor = false,
+			ZIndex = 10,
+			Parent = ScreenGui,
 		})
-	else
-		-- Fallback: first letter of title
-		FloatIcon = New("TextLabel", {
-			Size = UDim2.fromOffset(30, 30),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			BackgroundTransparency = 1,
-			Text = WindowInfo.Title:sub(1, 1),
-			TextColor3 = Library.Scheme.AccentColor,
-			TextScaled = true,
-			Font = Enum.Font.GothamBold,
-			Parent = FloatingToggle,
+		New("UICorner", {
+			CornerRadius = UDim.new(0, 10),
+			Parent = ToggleBtnFrame,
 		})
+		local ToggleBtnOutline = New("UIStroke", {
+			Color = Library.Toggled
+				and "AccentColor"
+				or "OutlineColor",
+			Thickness = 1,
+			ZIndex = 2,
+			Parent = ToggleBtnFrame,
+		})
+		New("UIStroke", {
+			Color = "DarkColor",
+			Thickness = 1.5,
+			ZIndex = 1,
+			Parent = ToggleBtnFrame,
+		})
+		local ToggleBtnIcon = New("ImageLabel", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			Image = ToggleBtnTexture,
+			ImageColor3 = Color3.new(1, 1, 1),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(
+				ToggleBtnIconSize,
+				ToggleBtnIconSize
+			),
+			ZIndex = 10,
+			Parent = ToggleBtnFrame,
+		})
+
+		local ToggleBtnAnimInfo = TweenInfo.new(
+			0.25,
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.Out
+		)
+		local ToggleBtnFadeInfo = TweenInfo.new(
+			0.2,
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.Out
+		)
+
+		local function UpdateToggleButton(SkipAnim)
+			local IsOpen = Library.Toggled
+			Library.Registry[ToggleBtnOutline]
+				.Color = IsOpen
+				and "AccentColor"
+				or "OutlineColor"
+			local TargetOutlineColor = GetSchemeValue(
+				IsOpen and "AccentColor"
+					or "OutlineColor"
+			)
+			if SkipAnim then
+				ToggleBtnOutline.Color =
+					TargetOutlineColor
+				ToggleBtnOutline.Thickness = IsOpen
+					and 1.5
+					or 1
+			else
+				TweenService:Create(
+					ToggleBtnOutline,
+					ToggleBtnFadeInfo,
+					{
+						Color = TargetOutlineColor,
+						Thickness = IsOpen
+							and 1.5
+							or 1,
+					}
+				):Play()
+				ToggleBtnIcon.Rotation = -90
+				ToggleBtnIcon.Size =
+					UDim2.fromOffset(0, 0)
+				TweenService:Create(
+					ToggleBtnIcon,
+					ToggleBtnAnimInfo,
+					{
+						Rotation = 0,
+						Size = UDim2.fromOffset(
+							ToggleBtnIconSize,
+							ToggleBtnIconSize
+						),
+					}
+				):Play()
+			end
+		end
+
+		ToggleBtnFrame.MouseButton1Click:Connect(
+			function()
+				Library:Toggle()
+			end
+		)
+		Library:MakeDraggable(
+			ToggleBtnFrame,
+			ToggleBtnFrame,
+			true
+		)
+
+		-- Sync toggle state animation with window toggle
+		local OrigToggle = Library.Toggle
+		function Library:Toggle(Value)
+			OrigToggle(Library, Value)
+			UpdateToggleButton(false)
+		end
+
+		UpdateToggleButton(true)
 	end
 
 
-
-	-- Click bounce animation + toggle (drag-aware: won't toggle if user dragged)
-	local FloatIsDragging = false
-	local FloatDragStart
-	FloatingToggle.InputBegan:Connect(function(Input)
-		if not IsClickInput(Input) then return end
-		
-		-- Track drag start to prevent accidental toggle on drag
-		FloatIsDragging = false
-		FloatDragStart = Input.Position
-		
-		FloatToggleDebounce = true
-		task.delay(0.3, function()
-			FloatToggleDebounce = false
-		end)
-		
-		-- Animate icon only (shrink)
-		if FloatIcon then
-			local IconBounceIn = TweenService:Create(FloatIcon, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-				Size = UDim2.fromOffset(23, 23),
-			})
-			IconBounceIn:Play()
-			IconBounceIn.Completed:Wait()
-		end
-		
-		-- Only toggle if not dragged
-		if not FloatIsDragging then
-			Library:Toggle()
-		end
-		
-		-- Animate icon back (bounce back)
-		if FloatIcon then
-			local IconBounceOut = TweenService:Create(FloatIcon, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-				Size = UDim2.fromOffset(30, 30),
-			})
-			IconBounceOut:Play()
-		end
-	end)
-	
-	-- Track mouse movement to detect drag
-	FloatingToggle.InputChanged:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseMovement then
-			if FloatDragStart and (Input.Position - FloatDragStart).Magnitude > 10 then
-				FloatIsDragging = true
-			end
-		end
-	end)
-	
-	-- Reset on release
-	FloatingToggle.InputEnded:Connect(function(Input)
-		if IsClickInput(Input) then
-			FloatIsDragging = false
-			FloatDragStart = nil
-		end
-	end)
 	if WindowInfo.EnableSidebarResize then
 		local Threshold = (WindowInfo.MinSidebarWidth + WindowInfo.SidebarCompactWidth) * WindowInfo.SidebarCollapseThreshold
 		local StartPos, StartWidth
@@ -11447,14 +11454,14 @@ end
 			LockButton.Button.AnchorPoint = Vector2.new(0, 0)
 			LockButton.Button.Position = UDim2.fromOffset(ToggleButton.Button.Size.X.Offset + 12, 6)
 		end
-			ToggleButton.Button.Visible = false
-			LockButton.Button.Visible = false
-		end
+		ToggleButton.Button.Visible = false
+		LockButton.Button.Visible = false
+	end
 
-		if WindowInfo.ShowMobileButtons == false then
-			ToggleButton.Button.Visible = false
-			LockButton.Button.Visible = false
-		end
+	if WindowInfo.ShowMobileButtons == false then
+		ToggleButton.Button.Visible = false
+		LockButton.Button.Visible = false
+	end
 	Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
 		if Library.Unloaded then
 			return

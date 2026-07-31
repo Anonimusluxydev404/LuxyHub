@@ -12352,9 +12352,18 @@ function Library:CreateOverlay(Info: { [string]: any }): { [string]: any }
 		LayoutOrder = 1,
 		Parent = Holder,
 	})
-	New("TextLabel", {
+	New("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Left,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = Header,
+	})
+	local TitleLabel = New("TextLabel", {
+		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
-		Size = UDim2.fromOffset(CW - 24, 24),
+		Size = UDim2.fromOffset(0, 24),
 		Text = Title,
 		TextSize = 14,
 		TextColor3 = Color3.fromRGB(220, 220, 220),
@@ -12363,14 +12372,15 @@ function Library:CreateOverlay(Info: { [string]: any }): { [string]: any }
 		Parent = Header,
 	})
 	New("ImageLabel", {
+		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(CW - 20, 3),
+		Position = UDim2.new(1, -8, 0.5, 0),
 		Size = UDim2.fromOffset(18, 18),
 		Image = "rbxassetid://95816097006870",
 		Parent = Header,
 	})
 
-	New("Frame", {
+	local Divider = New("Frame", {
 		BackgroundColor3 = Color3.fromRGB(80, 80, 90),
 		Size = UDim2.fromOffset(CW, 1),
 		LayoutOrder = 2,
@@ -12384,13 +12394,13 @@ function Library:CreateOverlay(Info: { [string]: any }): { [string]: any }
 		LayoutOrder = 3,
 		Parent = Holder,
 	})
-	New("UIListLayout", {
+	local BodyList = New("UIListLayout", {
 		Padding = UDim.new(0, 4),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = Body,
 	})
 
-	New("TextLabel", {
+	local FooterLabel = New("TextLabel", {
 		BackgroundTransparency = 1,
 		Size = UDim2.fromOffset(CW, 16),
 		Text = "Luxy Hub",
@@ -12402,6 +12412,17 @@ function Library:CreateOverlay(Info: { [string]: any }): { [string]: any }
 		LayoutOrder = 4,
 		Parent = Holder,
 	})
+
+	-- Keep header/divider/footer in sync with the widest row
+	local function ResizeToFit()
+		local ContentW = BodyList.AbsoluteContentSize.X
+		local TargetW = math.max(CW, ContentW + 8)
+		Header.Size = UDim2.fromOffset(TargetW, 24)
+		Divider.Size = UDim2.fromOffset(TargetW, 1)
+		Body.Size = UDim2.fromOffset(TargetW, 0)
+		FooterLabel.Size = UDim2.fromOffset(TargetW, 16)
+	end
+	BodyList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(ResizeToFit)
 
 	local Rows = {}
 	local RowOrder = {}
@@ -12427,15 +12448,25 @@ function Library:CreateOverlay(Info: { [string]: any }): { [string]: any }
 			return
 		end
 		local RowFrame = New("Frame", {
+			AutomaticSize = Enum.AutomaticSize.XY,
 			BackgroundTransparency = 1,
-			Size = UDim2.fromOffset(CW, 20),
+			Size = UDim2.fromOffset(0, 20),
 			LayoutOrder = #RowOrder + 1,
 			Parent = Body,
 		})
+		New("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Left,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 5),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Parent = RowFrame,
+		})
 		local K = New("TextLabel", {
+			AutomaticSize = Enum.AutomaticSize.X,
 			BackgroundTransparency = 1,
-			Size = UDim2.fromOffset(CW - 100, 20),
-			Text = tostring(Key),
+			Size = UDim2.fromOffset(0, 20),
+			Text = tostring(Key) .. ":",
 			TextSize = 13,
 			TextColor3 = Color3.fromRGB(220, 220, 220),
 			TextTransparency = 0.3,
@@ -12444,14 +12475,14 @@ function Library:CreateOverlay(Info: { [string]: any }): { [string]: any }
 			Parent = RowFrame,
 		})
 		local V = New("TextLabel", {
+			AutomaticSize = Enum.AutomaticSize.X,
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(CW - 100, 0),
-			Size = UDim2.fromOffset(100, 20),
+			Size = UDim2.fromOffset(0, 20),
 			Text = tostring(Value),
 			TextSize = 13,
 			TextColor3 = ValueColor or Color3.new(1, 1, 1),
 			Font = Enum.Font.Gotham,
-			TextXAlignment = Enum.TextXAlignment.Right,
+			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = RowFrame,
 		})
 		table.insert(RowOrder, Key)

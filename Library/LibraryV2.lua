@@ -8792,7 +8792,7 @@ function Library:CreateWindow(WindowInfo)
 			Position = UDim2.new(0, 30, 0.5, 0),
 			Size = UDim2.new(1, -38, 1, 0),
 			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
+			TextXAlignment = Enum.TextXAlignment.Center,
 			Parent = SearchFrame,
 		})
 

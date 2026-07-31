@@ -8719,7 +8719,7 @@ function Library:CreateWindow(WindowInfo)
 		-- Stats labels
 		local FPSBadge = CreateBadge("<font color='" .. AccentHex .. "'>FPS:</font> 0")
 		local PingBadge = CreateBadge("<font color='" .. AccentHex .. "'>Ping:</font> 0ms")
-		local ServerBadge = CreateBadge("<font color='" .. AccentHex .. "'>Server:</font> v2.1.2")
+		local ServerBadge = CreateBadge("<font color='" .. AccentHex .. "'>Server:</font> " .. (tostring(game.JobId):sub(1, 8) or "?"))
 
 		-- Auto-update FPS & Ping
 		coroutine.wrap(function()
@@ -8736,7 +8736,7 @@ function Library:CreateWindow(WindowInfo)
 					TimeCount = 0
 					pcall(function()
 						FPSBadge.Text = "<font color='" .. AccentHex .. "'>FPS:</font> " .. FPS
-						local Ping = math.floor(Stats:GetNetworkPing() * 1000 + 0.5)
+						local Ping = math.floor((LocalPlayer:GetNetworkPing() or 0) * 1000 + 0.5)
 						PingBadge.Text = "<font color='" .. AccentHex .. "'>Ping:</font> " .. Ping .. "ms"
 					end)
 				end
@@ -11338,11 +11338,18 @@ function Library:CreateWindow(WindowInfo)
 			true
 		)
 
+		-- Hide floating button while loading is active
+		Library.FloatingToggle = ToggleBtnFrame
+		ToggleBtnFrame.Visible = not Library.ActiveLoading
+
 		-- Sync toggle state animation with window toggle
 		local OrigToggle = Library.Toggle
 		function Library:Toggle(Value)
 			OrigToggle(Library, Value)
 			UpdateToggleButton(false)
+			if Library.FloatingToggle then
+				Library.FloatingToggle.Visible = not Library.ActiveLoading
+			end
 		end
 
 		UpdateToggleButton(true)
@@ -12160,6 +12167,11 @@ function Library:CreateLoading(LoadingInfo)
 		Loading.Destroyed = true
 		Library.ActiveLoading = nil
 
+		-- Show floating toggle again after loading finishes
+		if Library.FloatingToggle then
+			Library.FloatingToggle.Visible = true
+		end
+
 		if Library.Toggle and Library.Toggled == false and Library.Unloaded ~= true then
 			Library:Toggle(true)
 		end
@@ -12169,6 +12181,11 @@ function Library:CreateLoading(LoadingInfo)
 
 	if Library.Toggle and Library.Toggled and Library.Unloaded ~= true then
 		Library:Toggle(false)
+	end
+
+	-- Hide floating toggle while loading is active (in case CreateWindow ran first)
+	if Library.FloatingToggle then
+		Library.FloatingToggle.Visible = false
 	end
 
 	Loading:SetCurrentStep(Loading.CurrentStep)

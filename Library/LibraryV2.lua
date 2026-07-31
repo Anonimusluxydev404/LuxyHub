@@ -8744,57 +8744,63 @@ function Library:CreateWindow(WindowInfo)
 		end)()
 
 		--// Search Bar (Right side)
-		local SearchBox = New("TextBox", {
+		--// Search Bar (Frame container)
+		local SearchFrame = New("Frame", {
 			BackgroundColor3 = "MainColor",
-			PlaceholderText = "Search",
 			Size = UDim2.new(0, 200, 0, 28),
-			TextSize = 13,
 			Visible = not (WindowInfo.DisableSearch or false),
 			Parent = RightWrapper,
 		})
 		New("UIFlexItem", {
 			FlexMode = Enum.UIFlexMode.Shrink,
-			Parent = SearchBox,
+			Parent = SearchFrame,
 		})
 		table.insert(
 			Library.Corners,
 			New("UICorner", {
 				CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
-				Parent = SearchBox,
+				Parent = SearchFrame,
 			})
 		)
 		New("UIStroke", {
 			Color = "OutlineColor",
-			Parent = SearchBox,
+			Parent = SearchFrame,
 		})
 
-		--// Search Icon (kiri)
+		--// Search Icon (kiri banget)
 		local SearchIcon = Library:GetIcon("search")
 		if SearchIcon then
 			New("ImageLabel", {
 				AnchorPoint = Vector2.new(0, 0.5),
+				BackgroundTransparency = 1,
 				Image = SearchIcon.Url,
 				ImageColor3 = "FontColor",
 				ImageRectOffset = SearchIcon.ImageRectOffset,
 				ImageRectSize = SearchIcon.ImageRectSize,
 				ImageTransparency = 0.4,
-				Position = UDim2.new(0, 10, 0.5, 0),
+				Position = UDim2.new(0, 8, 0.5, 0),
 				Size = UDim2.fromOffset(16, 16),
-				BackgroundTransparency = 1,
-				Parent = SearchBox,
+				Parent = SearchFrame,
 			})
 		end
-		New("UIPadding", {
-			PaddingLeft = UDim.new(0, 32),
-			PaddingRight = UDim.new(0, 8),
-			Parent = SearchBox,
-		})
 
+		--// Search TextBox
+		local SearchBox = New("TextBox", {
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			PlaceholderText = "Search",
+			Position = UDim2.new(0, 30, 0.5, 0),
+			Size = UDim2.new(1, -38, 1, 0),
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = SearchFrame,
+		})
 
 		--// Search text changed
 		Library:GiveSignal(SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 			Library:UpdateSearch(SearchBox.Text)
 		end))
+
 
 		--// Auto-hide badges on resize
 		local ResizeConn

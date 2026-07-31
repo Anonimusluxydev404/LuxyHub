@@ -60,6 +60,9 @@ local S = {
 
 	BlackScreen = false,
 	BScreenObj = nil,
+
+	WhiteScreen = false,
+	WScreenObj = nil,
 }
 
 -- ====================================================================
@@ -499,34 +502,101 @@ local function ToggleRTXMode(on)
 end
 
 -- ====================================================================
--- Feature: Black Screen
+-- Feature: Screen Overlay (Black / White fullscreen + logo + title)
 -- ====================================================================
+local LOGO_ID = "rbxassetid://119236006737744"
+
+local function BuildScreen(color, name, on, titleColor)
+	local gui = Instance.new("ScreenGui")
+	gui.Name = name
+	gui.ResetOnSpawn = false
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 999
+
+	-- Fullscreen frame
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, 0, 1, 0)
+	frame.BackgroundColor3 = color
+	frame.BackgroundTransparency = 0
+	frame.BorderSizePixel = 0
+	frame.ZIndex = 1
+	frame.Parent = gui
+
+	-- Center container
+	local center = Instance.new("Frame")
+	center.AnchorPoint = Vector2.new(0.5, 0.5)
+	center.BackgroundTransparency = 1
+	center.Position = UDim2.fromScale(0.5, 0.5)
+	center.Size = UDim2.fromOffset(400, 200)
+	center.ZIndex = 2
+	center.Parent = gui
+
+	local layout = Instance.new("UIListLayout")
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Padding = UDim.new(0, 12)
+	layout.Parent = center
+
+	-- Logo
+	local logo = Instance.new("ImageLabel")
+	logo.AnchorPoint = Vector2.new(0.5, 0.5)
+	logo.BackgroundTransparency = 1
+	logo.Position = UDim2.fromScale(0.5, 0.5)
+	logo.Size = UDim2.fromOffset(120, 120)
+	logo.Image = LOGO_ID
+	logo.ZIndex = 3
+	logo.Parent = center
+
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.GothamBold
+	title.Size = UDim2.new(1, 0, 0, 40)
+	title.Text = "LuxyHub"
+	title.TextColor3 = titleColor or Color3.fromRGB(255, 255, 255)
+	title.TextSize = 34
+	title.ZIndex = 3
+	title.Parent = center
+
+	local parent = CoreGui
+	if not parent then parent = LocalPlayer:FindFirstChild("PlayerGui") end
+	if parent then
+		gui.Parent = parent
+		if on then S.BScreenObj = gui else S.WScreenObj = gui end
+	end
+end
+
 local function ToggleBlackScreen(on)
 	if on then
 		if S.BScreenObj then return end
-
-		local gui = Instance.new("ScreenGui")
-		gui.Name = "LuxyBlackScreen"
-		gui.ResetOnSpawn = false
-		gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-		local frame = Instance.new("Frame")
-		frame.Size = UDim2.new(1, 0, 1, 0)
-		frame.BackgroundColor3 = Color3.new(0, 0, 0)
-		frame.BackgroundTransparency = 0
-		frame.BorderSizePixel = 0
-		frame.Parent = gui
-
-		local parent = CoreGui
-		if not parent then parent = LocalPlayer:FindFirstChild("PlayerGui") end
-		if parent then
-			gui.Parent = parent
-			S.BScreenObj = gui
+		-- Turn off white screen if active
+		if S.WScreenObj then
+			pcall(S.WScreenObj.Destroy, S.WScreenObj)
+			S.WScreenObj = nil
 		end
+		BuildScreen(Color3.new(0, 0, 0), "LuxyBlackScreen", true, Color3.fromRGB(255, 255, 255))
 	else
 		if S.BScreenObj then
 			pcall(S.BScreenObj.Destroy, S.BScreenObj)
 			S.BScreenObj = nil
+		end
+	end
+end
+
+local function ToggleWhiteScreen(on)
+	if on then
+		if S.WScreenObj then return end
+		-- Turn off black screen if active
+		if S.BScreenObj then
+			pcall(S.BScreenObj.Destroy, S.BScreenObj)
+			S.BScreenObj = nil
+		end
+		BuildScreen(Color3.new(1, 1, 1), "LuxyWhiteScreen", false, Color3.fromRGB(0, 0, 0))
+	else
+		if S.WScreenObj then
+			pcall(S.WScreenObj.Destroy, S.WScreenObj)
+			S.WScreenObj = nil
 		end
 	end
 end
@@ -612,6 +682,11 @@ function Misc:Setup(Library, Tab)
 	Perf:AddToggle("Misc_BlackScreen", {
 		Text = "Black Screen",
 		Callback = function(v) ToggleBlackScreen(v) end,
+	})
+
+	Perf:AddToggle("Misc_WhiteScreen", {
+		Text = "White Screen",
+		Callback = function(v) ToggleWhiteScreen(v) end,
 	})
 end
 

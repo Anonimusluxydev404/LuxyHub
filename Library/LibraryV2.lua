@@ -8719,7 +8719,7 @@ function Library:CreateWindow(WindowInfo)
 		-- Stats labels
 		local FPSBadge = CreateBadge("<font color='" .. AccentHex .. "'>FPS:</font> 0")
 		local PingBadge = CreateBadge("<font color='" .. AccentHex .. "'>Ping:</font> 0ms")
-		local ServerBadge = CreateBadge("<font color='" .. AccentHex .. "'>Server:</font> " .. (tostring(game.JobId):sub(1, 8) or "?"))
+		local ServerBadge = CreateBadge("<font color='" .. AccentHex .. "'>Server:</font> V" .. tostring(game.PlaceVersion))
 
 		-- Auto-update FPS & Ping
 		coroutine.wrap(function()

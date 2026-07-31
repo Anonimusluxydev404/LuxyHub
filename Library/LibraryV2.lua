@@ -8747,7 +8747,7 @@ function Library:CreateWindow(WindowInfo)
 		local SearchBox = New("TextBox", {
 			BackgroundColor3 = "MainColor",
 			PlaceholderText = "Search",
-			Size = UDim2.new(0, 280, 0, 34),
+			Size = UDim2.new(0, 200, 0, 28),
 			TextSize = 13,
 			Visible = not (WindowInfo.DisableSearch or false),
 			Parent = RightWrapper,
@@ -8767,24 +8767,28 @@ function Library:CreateWindow(WindowInfo)
 			Color = "OutlineColor",
 			Parent = SearchBox,
 		})
-		New("UIPadding", {
-			PaddingRight = UDim.new(0, 32),
-			Parent = SearchBox,
-		})
+
+		--// Search Icon (kiri)
 		local SearchIcon = Library:GetIcon("search")
 		if SearchIcon then
 			New("ImageLabel", {
-				AnchorPoint = Vector2.new(1, 0.5),
+				AnchorPoint = Vector2.new(0, 0.5),
 				Image = SearchIcon.Url,
 				ImageColor3 = "FontColor",
 				ImageRectOffset = SearchIcon.ImageRectOffset,
 				ImageRectSize = SearchIcon.ImageRectSize,
-				ImageTransparency = 0.35,
-				Position = UDim2.new(1, -10, 0.5, 0),
-				Size = UDim2.fromOffset(18, 18),
+				ImageTransparency = 0.4,
+				Position = UDim2.new(0, 10, 0.5, 0),
+				Size = UDim2.fromOffset(16, 16),
+				BackgroundTransparency = 1,
 				Parent = SearchBox,
 			})
 		end
+		New("UIPadding", {
+			PaddingLeft = UDim.new(0, 32),
+			PaddingRight = UDim.new(0, 8),
+			Parent = SearchBox,
+		})
 
 
 		--// Search text changed

@@ -34,6 +34,7 @@ local Misc = {}
 local S = {
 	ESP = false,
 	ESPConn = nil,
+	ESPLeaveConn = nil,
 	ESPDrawings = {},
 	ESPBoxColor = Color3.fromRGB(0, 255, 0),
 	ESPLineColor = Color3.fromRGB(255, 255, 255),
@@ -83,6 +84,17 @@ local function ToggleESP(on)
 		S.ESP = true
 		ClearESP()
 
+		-- Player leave -> hapus drawing-nya LANGSUNG (anti ngarang/ghost)
+		S.ESPLeaveConn = Players.PlayerRemoving:Connect(function(plr)
+			local d = S.ESPDrawings[plr]
+			if d then
+				pcall(d.Box.Remove, d.Box)
+				pcall(d.Text.Remove, d.Text)
+				pcall(d.Line.Remove, d.Line)
+				S.ESPDrawings[plr] = nil
+			end
+		end)
+
 		S.ESPConn = RunService.RenderStepped:Connect(function()
 			if not Camera then
 				Camera = Workspace.CurrentCamera
@@ -93,21 +105,31 @@ local function ToggleESP(on)
 			for _, plr in Players:GetPlayers() do
 				if plr == LocalPlayer then continue end
 				local char = plr.Character
-				if not char then continue end
-				local hrp = char:FindFirstChild("HumanoidRootPart")
-				if not hrp then continue end
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				local drawings = S.ESPDrawings[plr]
 
-				local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-				if not onScreen then
-					if S.ESPDrawings[plr] then
-						S.ESPDrawings[plr].Box.Visible = false
-						S.ESPDrawings[plr].Text.Visible = false
-						S.ESPDrawings[plr].Line.Visible = false
+				-- Ga punya char/HRP (leave/respawn) -> sembunyiin, jangan beku
+				if not hrp then
+					if drawings then
+						drawings.Box.Visible = false
+						drawings.Text.Visible = false
+						drawings.Line.Visible = false
 					end
 					continue
 				end
 
-				if not S.ESPDrawings[plr] then
+				local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+				-- Off-screen ATAU di belakang kamera -> sembunyiin (anti posisi aneh)
+				if not onScreen or pos.Z < 0 then
+					if drawings then
+						drawings.Box.Visible = false
+						drawings.Text.Visible = false
+						drawings.Line.Visible = false
+					end
+					continue
+				end
+
+				if not drawings then
 					local box = Drawing.new("Square")
 					box.Thickness = 1
 					box.Filled = false
@@ -125,10 +147,10 @@ local function ToggleESP(on)
 					line.Color = S.ESPLineColor
 					line.Transparency = 0.3
 
-					S.ESPDrawings[plr] = { Box = box, Text = txt, Line = line }
+					drawings = { Box = box, Text = txt, Line = line }
+					S.ESPDrawings[plr] = drawings
 				end
 
-				local drawings = S.ESPDrawings[plr]
 				local scale = hrp.Size.Y * 4
 				local boxSize = Vector2.new(scale, scale * 1.5)
 				local boxPos = Vector2.new(pos.X - boxSize.X / 2, pos.Y - boxSize.Y / 2)
@@ -153,6 +175,10 @@ local function ToggleESP(on)
 		if S.ESPConn then
 			S.ESPConn:Disconnect()
 			S.ESPConn = nil
+		end
+		if S.ESPLeaveConn then
+			S.ESPLeaveConn:Disconnect()
+			S.ESPLeaveConn = nil
 		end
 		ClearESP()
 		S.ESP = false

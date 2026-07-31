@@ -20,7 +20,6 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
@@ -53,6 +52,8 @@ local S = {
 
 	FPSBoost = false,
 	FPSOld = {},
+	FPSDisabledFX = {},
+	FPSConn = nil,
 
 	RTXMode = false,
 	RTXOld = {},
@@ -75,6 +76,8 @@ end
 
 local function ToggleESP(on)
 	if on then
+		if S.ESP then return end
+		S.ESP = true
 		ClearESP()
 
 		S.ESPConn = RunService.RenderStepped:Connect(function()
@@ -149,6 +152,7 @@ local function ToggleESP(on)
 			S.ESPConn = nil
 		end
 		ClearESP()
+		S.ESP = false
 	end
 end
 
@@ -157,6 +161,7 @@ end
 -- ====================================================================
 local function ToggleFly(on)
 	if on then
+		if S.Fly then return end
 		local char = LocalPlayer.Character
 		if not char then
 			repeat task.wait() char = LocalPlayer.Character until char
@@ -179,6 +184,7 @@ local function ToggleFly(on)
 		bg.Parent = hrp
 
 		S.FlyParts = { bp, bg }
+		S.Fly = true
 
 		S.FlyConn = RunService.RenderStepped:Connect(function()
 			if not hrp or not hrp.Parent then
@@ -224,6 +230,7 @@ local function ToggleFly(on)
 			pcall(p.Destroy, p)
 		end
 		S.FlyParts = {}
+		S.Fly = false
 	end
 end
 
@@ -232,6 +239,8 @@ end
 -- ====================================================================
 local function ToggleInfJump(on)
 	if on then
+		if S.InfJump then return end
+		S.InfJump = true
 		S.InfJumpConn = UserInputService.JumpRequest:Connect(function()
 			local char = LocalPlayer.Character
 			if not char then return end
@@ -245,28 +254,29 @@ local function ToggleInfJump(on)
 			S.InfJumpConn:Disconnect()
 			S.InfJumpConn = nil
 		end
+		S.InfJump = false
 	end
 end
 
 -- ====================================================================
--- Feature: Anti AFK (100% work)
+-- Feature: Anti AFK (100% work, safe — no click spam, no ESP break)
 -- ====================================================================
 local function ToggleAntiAFK(on)
 	if on then
-		-- Method 1: Hook Idled
-		LocalPlayer.Idled:Connect(function()
+		if S.AntiAFK then return end
+		S.AntiAFK = true
+
+		-- Method 1: Hook Idled (fires only when Roblox detects you idle)
+		-- No heartbeat click spam so it never interferes with ESP/render.
+		S.AntiAFKIdledConn = LocalPlayer.Idled:Connect(function()
 			task.spawn(function()
 				task.wait(0.1)
 				VirtualUser:CaptureController()
 				VirtualUser:ClickButton1(Vector2.new())
-				task.wait(0.1)
-				VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-				task.wait(0.05)
-				VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
 			end)
 		end)
 
-		-- Method 2: Heartbeat keep-alive
+		-- Method 2: Gentle pose reset (no clicks)
 		S.AntiAFKHeartConn = RunService.Heartbeat:Connect(function()
 			local char = LocalPlayer.Character
 			if not char then return end
@@ -275,11 +285,13 @@ local function ToggleAntiAFK(on)
 				if hum.PlatformStand then hum.PlatformStand = false end
 				if hum.Sit then hum.Sit = false end
 			end
-			-- Simulate player activity
-			VirtualUser:CaptureController()
-			VirtualUser:ClickButton1(Vector2.new())
 		end)
 	else
+		S.AntiAFK = false
+		if S.AntiAFKIdledConn then
+			S.AntiAFKIdledConn:Disconnect()
+			S.AntiAFKIdledConn = nil
+		end
 		if S.AntiAFKHeartConn then
 			S.AntiAFKHeartConn:Disconnect()
 			S.AntiAFKHeartConn = nil
@@ -288,66 +300,130 @@ local function ToggleAntiAFK(on)
 end
 
 -- ====================================================================
--- Feature: FPS Boost (brutal)
+-- Feature: FPS Boost (BRUTAL — like Grow A Garden 2 / Kalb)
+-- Plastic everything, no decals, no textures, no lights, no particles
 -- ====================================================================
+local function ApplyBrutalFPS()
+	for _, v in Workspace:GetDescendants() do
+		pcall(function()
+			if v:IsA("BasePart") then
+				v.Material = Enum.Material.SmoothPlastic
+				v.CastShadow = false
+				v.Reflectance = 0
+				if v:IsA("MeshPart") then
+					v.TextureID = ""
+				end
+			elseif v:IsA("Decal") or v:IsA("Texture") then
+				v.Transparency = 1
+			elseif v:IsA("SpecialMesh") then
+				v.TextureId = ""
+			elseif v:IsA("ParticleEmitter") or v:IsA("Sparkles") or v:IsA("Smoke") or v:IsA("Fire") then
+				v.Enabled = false
+			elseif v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
+				v:Destroy()
+			elseif v:IsA("Light") then
+				v.Enabled = false
+			end
+		end)
+	end
+end
+
 local function ToggleFPSBoost(on)
 	if on then
+		if S.FPSBoost then return end
+		S.FPSBoost = true
+
+		-- Save lighting
 		S.FPSOld = {
 			GlobalShadows = Lighting.GlobalShadows,
 			FogEnd = Lighting.FogEnd,
 			FogStart = Lighting.FogStart,
 			Ambient = Lighting.Ambient,
 			Brightness = Lighting.Brightness,
-			ColorShift_Top = Lighting.ColorShift_Top,
-			ColorShift_Bottom = Lighting.ColorShift_Bottom,
-			OutdoorAmbient = Lighting.OutdoorAmbient,
 			Technology = Lighting.Technology,
-			ClockTime = Lighting.ClockTime,
-			GeographicLatitude = Lighting.GeographicLatitude,
-			ExposureCompensation = Lighting.ExposureCompensation,
 		}
+
+		-- Disable all post effects (bloom, sunrays, color correction, blur, dof)
+		S.FPSDisabledFX = {}
+		for _, v in Lighting:GetChildren() do
+			if v:IsA("PostEffect") or v:IsA("BloomEffect") or v:IsA("SunRaysEffect")
+				or v:IsA("ColorCorrectionEffect") or v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") then
+				if v.Enabled then
+					table.insert(S.FPSDisabledFX, v)
+					v.Enabled = false
+				end
+			end
+		end
 
 		-- Kill visuals
 		Lighting.GlobalShadows = false
-		Lighting.FogEnd = 1e10
-		Lighting.FogStart = 1e10
-		Lighting.Brightness = 2
+		Lighting.FogEnd = 9e9
+		Lighting.FogStart = 9e9
+		Lighting.Brightness = 0
 		Lighting.Ambient = Color3.new(1, 1, 1)
-		Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
 		pcall(function() Lighting.Technology = Enum.Technology.Compat end)
-		Lighting.ClockTime = 14
-		Lighting.GeographicLatitude = 0
-		Lighting.ExposureCompensation = 0
 
-		-- Decal & terrain
-		pcall(function() Workspace.DecalLifetime = 0 end)
-
-		-- Graphics settings — max performance
+		-- Lowest graphics quality
+		pcall(function()
+			settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+		end)
 		pcall(function()
 			local rs = game:GetService("RenderSettings")
-			rs.QualityLevel = 1
 			rs.MaterialQualityLevel = Enum.MaterialQuality.Low
 		end)
 
-		-- Force all parts to Plastic (burik / ugly)
-		task.spawn(function()
-			while S.FPSBoost do
-				task.wait(0.5)
-				for _, v in Workspace:GetDescendants() do
-					if v:IsA("BasePart") and not v:IsA("Terrain") then
-						pcall(function()
-							v.Material = Enum.Material.Plastic
-							v.CastShadow = false
-						end)
+		-- Decal lifetime
+		pcall(function() Workspace.DecalLifetime = 0 end)
+
+		-- Brutal pass
+		ApplyBrutalFPS()
+
+		-- Keep new parts plastic
+		S.FPSConn = Workspace.DescendantAdded:Connect(function(v)
+			task.spawn(function()
+				task.wait(0.1)
+				pcall(function()
+					if v:IsA("BasePart") then
+						v.Material = Enum.Material.SmoothPlastic
+						v.CastShadow = false
+						v.Reflectance = 0
+						if v:IsA("MeshPart") then v.TextureID = "" end
+					elseif v:IsA("Decal") or v:IsA("Texture") then
+						v.Transparency = 1
+					elseif v:IsA("SpecialMesh") then
+						v.TextureId = ""
+					elseif v:IsA("ParticleEmitter") or v:IsA("Sparkles") or v:IsA("Smoke") or v:IsA("Fire") then
+						v.Enabled = false
+					elseif v:IsA("Light") then
+						v.Enabled = false
 					end
-				end
-			end
+				end)
+			end)
 		end)
 	else
+		-- Restore lighting
 		for k, v in next, S.FPSOld do
 			pcall(function() Lighting[k] = v end)
 		end
 		S.FPSOld = {}
+
+		-- Restore post effects
+		for _, fx in S.FPSDisabledFX do
+			pcall(function() fx.Enabled = true end)
+		end
+		S.FPSDisabledFX = {}
+
+		if S.FPSConn then
+			S.FPSConn:Disconnect()
+			S.FPSConn = nil
+		end
+
+		-- Restore graphics
+		pcall(function()
+			settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
+		end)
+
+		S.FPSBoost = false
 	end
 end
 
@@ -356,6 +432,9 @@ end
 -- ====================================================================
 local function ToggleRTXMode(on)
 	if on then
+		if S.RTXMode then return end
+		S.RTXMode = true
+
 		S.RTXOld = {
 			GlobalShadows = Lighting.GlobalShadows,
 			FogEnd = Lighting.FogEnd,
@@ -415,6 +494,7 @@ local function ToggleRTXMode(on)
 			pcall(function() Lighting[k] = v end)
 		end
 		S.RTXOld = {}
+		S.RTXMode = false
 	end
 end
 
@@ -423,6 +503,8 @@ end
 -- ====================================================================
 local function ToggleBlackScreen(on)
 	if on then
+		if S.BScreenObj then return end
+
 		local gui = Instance.new("ScreenGui")
 		gui.Name = "LuxyBlackScreen"
 		gui.ResetOnSpawn = false
@@ -473,8 +555,10 @@ function Misc:Setup(Library, Tab)
 		Callback = function(v) ToggleInfJump(v) end,
 	})
 
+	-- Anti AFK: ON by default
 	General:AddToggle("Misc_AntiAFK", {
 		Text = "Anti AFK",
+		Default = true,
 		Callback = function(v) ToggleAntiAFK(v) end,
 	})
 
@@ -510,7 +594,6 @@ function Misc:Setup(Library, Tab)
 				Library:Notify("Turn off RTX Mode first!", 3)
 				return
 			end
-			S.FPSBoost = v
 			ToggleFPSBoost(v)
 		end,
 	})
@@ -522,7 +605,6 @@ function Misc:Setup(Library, Tab)
 				Library:Notify("Turn off FPS Boost first!", 3)
 				return
 			end
-			S.RTXMode = v
 			ToggleRTXMode(v)
 		end,
 	})

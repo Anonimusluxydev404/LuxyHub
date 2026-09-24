@@ -263,11 +263,11 @@ local Library = {
 	--// Scheme \\--
 	IsLightTheme = false,
 	Scheme = {
-		BackgroundColor = Color3.fromRGB(15, 15, 15),
-		MainColor = Color3.fromRGB(25, 25, 25),
+		BackgroundColor = Color3.fromRGB(20, 20, 20),
+		MainColor = Color3.fromRGB(30, 30, 30),
 		AccentColor = Color3.fromRGB(195, 0, 255),
-		OutlineColor = Color3.fromRGB(40, 40, 40),
-		FontColor = Color3.new(1, 1, 1),
+		OutlineColor = Color3.fromRGB(38, 38, 38),
+		FontColor = Color3.new(232, 232, 232),
 		Font = Font.fromEnum(Enum.Font.Code),
 
 		RedColor = Color3.fromRGB(255, 50, 50),
@@ -11225,7 +11225,7 @@ function Library:CreateWindow(WindowInfo)
 
 	do
 		local ToggleBtnTexture =
-			"rbxassetid://119236006737744"
+			"rbxassetid://117688744510818"
 		local ToggleBtnSize = 46
 		local ToggleBtnIconSize = 45
 		local ToggleBtnFrame = New("ImageButton", {

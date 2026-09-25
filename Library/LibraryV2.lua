@@ -12143,204 +12143,371 @@ function Library:CreateWindow(WindowInfo)
 	return Window
 end
 
---// GENERIC COMPONENT: LIVE HUD OVERLAY WITH 3D VIEWPORT (CLEAN & DRAGGABLE)
-function Library:CreateLiveHUD(Info)
+--// SECONDARY COMPANION WINDOW: N3 LIVE DASHBOARD (IDENTIK DENGAN WINDOW UTAMA)
+function Library:CreateDashboardWindow(Info)
 	Info = Info or {}
-	local TitleText = Info.Title or "N3 Live Radar"
+	local TitleText = Info.Title or "N3 Live Dashboard"
 
-	local HUDFrame = New("Frame", {
+	-- WINDOW UTAMA KEDUA DENGAN STYLE OBSIDIAN
+	local WinFrame = New("Frame", {
 		BackgroundColor3 = "MainColor",
-		BackgroundTransparency = 0.25,
-		Position = Info.Position or UDim2.new(0.5, -135, 0, 18),
-		Size = UDim2.fromOffset(270, 78),
+		BackgroundTransparency = 0.1,
+		Position = Info.Position or UDim2.new(0, 25, 0, 120),
+		Size = UDim2.fromOffset(290, 420),
 		Active = true,
 		ClipsDescendants = true,
 		Parent = Library.ScreenGui or Library.LocalPlayer:WaitForChild("PlayerGui"),
 	})
 	table.insert(Library.Corners, New("UICorner", {
 		CornerRadius = UDim.new(0, Library.CornerRadius),
-		Parent = HUDFrame,
+		Parent = WinFrame,
 	}))
 	New("UIStroke", {
 		Color = "OutlineColor",
-		Thickness = 1,
-		Parent = HUDFrame,
+		Thickness = 1.2,
+		Parent = WinFrame,
 	})
 
-	-- TOPBAR (BISA DI-DRAG DENGAN MOUSE / TOUCH)
+	-- TOPBAR DENGAN AKSEN ICON N3 & DRAG HANDLE
 	local TopBar = New("Frame", {
 		BackgroundColor3 = "BackgroundColor",
-		BackgroundTransparency = 0.4,
-		Size = UDim2.new(1, 0, 0, 20),
-		Parent = HUDFrame,
+		BackgroundTransparency = 0.3,
+		Size = UDim2.new(1, 0, 0, 32),
+		Parent = WinFrame,
+	})
+
+	local IconImg = New("ImageLabel", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(8, 4),
+		Size = UDim2.fromOffset(24, 24),
+		Image = "rbxassetid://117688744510818", -- Icon resmi N3 Hub
+		Parent = TopBar,
 	})
 
 	local TitleLbl = New("TextLabel", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(8, 0),
-		Size = UDim2.new(1, -50, 1, 0),
+		Position = UDim2.fromOffset(38, 0),
+		Size = UDim2.new(1, -80, 1, 0),
 		Text = TitleText,
-		TextSize = 11,
+		TextSize = 12,
 		Font = Enum.Font.GothamBold,
-		TextColor3 = Color3.fromRGB(220, 220, 230),
+		TextColor3 = Color3.fromRGB(240, 240, 245),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = TopBar,
 	})
 
-	local StatusDot = New("Frame", {
+	local MinBtn = New("TextButton", {
+		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -8, 0.5, 0),
-		Size = UDim2.fromOffset(7, 7),
-		BackgroundColor3 = Color3.fromRGB(87, 242, 135), -- Hijau Standby
-		BorderSizePixel = 0,
+		Size = UDim2.fromOffset(22, 22),
+		Text = "−",
+		TextSize = 16,
+		Font = Enum.Font.GothamBold,
+		TextColor3 = Color3.fromRGB(180, 180, 190),
 		Parent = TopBar,
 	})
-	table.insert(Library.Corners, New("UICorner", {
-		CornerRadius = UDim.new(1, 0),
-		Parent = StatusDot,
-	}))
 
-	-- DRAGGING LOGIC (MENGGUNAKAN DRAG ENGINE LIBRARY)
+	-- CONTAINER SCROLL UTAMA DI BAWAH TOPBAR
+	local Container = New("ScrollingFrame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(0, 32),
+		Size = UDim2.new(1, 0, 1, -32),
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		ScrollBarThickness = 3,
+		ScrollBarImageColor3 = "OutlineColor",
+		Parent = WinFrame,
+	})
+	local ContentLayout = New("UIListLayout", {
+		FillDirection = Enum.FillDirection.Vertical,
+		Padding = UDim.new(0, 7),
+		Parent = Container,
+	})
+	New("UIPadding", {
+		PaddingLeft = UDim.new(0, 8),
+		PaddingRight = UDim.new(0, 8),
+		PaddingTop = UDim.new(0, 8),
+		PaddingBottom = UDim.new(0, 8),
+		Parent = Container,
+	})
+
+	local function UpdateCanvas()
+		Container.CanvasSize = UDim2.fromOffset(0, ContentLayout.AbsoluteContentSize.Y + 16)
+	end
+	ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvas)
+
+	-- DRAGGING LOGIC RESMI
 	do
 		local Dragging, DragInput, DragStart, StartPos
 		TopBar.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 				Dragging = true
 				DragStart = input.Position
-				StartPos = HUDFrame.Position
+				StartPos = WinFrame.Position
 				input.Changed:Connect(function()
-					if input.UserInputState == Enum.UserInputState.End then
-						Dragging = false
-					end
+					if input.UserInputState == Enum.UserInputState.End then Dragging = false end
 				end)
 			end
 		end)
 		TopBar.InputChanged:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				DragInput = input
-			end
+			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then DragInput = input end
 		end)
 		game:GetService("UserInputService").InputChanged:Connect(function(input)
 			if input == DragInput and Dragging then
 				local delta = input.Position - DragStart
-				HUDFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X, StartPos.Y.Scale, StartPos.Y.Offset + delta.Y)
+				WinFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + delta.X, StartPos.Y.Scale, StartPos.Y.Offset + delta.Y)
 			end
 		end)
 	end
 
-	-- MEDIA BOX: 3D VIEWPORT KIRI (UKURAN 48x48)
-	local ViewportBox = New("ViewportFrame", {
-		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(6, 24),
-		Size = UDim2.fromOffset(48, 48),
-		LightColor = Color3.fromRGB(255, 255, 255),
-		Ambient = Color3.fromRGB(190, 190, 190),
-		LightDirection = Vector3.new(-1, 2, -1),
-		Parent = HUDFrame,
-	})
-	local Cam = Instance.new("Camera")
-	Cam.FieldOfView = 50
-	Cam.Parent = ViewportBox
-	ViewportBox.CurrentCamera = Cam
-	local World = Instance.new("WorldModel")
-	World.Parent = ViewportBox
-
-	-- ROTASI MODEL 3D OTOMATIS
-	local AngleY = 0
-	game:GetService("RunService").RenderStepped:Connect(function(dt)
-		local currentModel = World:FindFirstChildWhichIsA("Model") or World:FindFirstChildWhichIsA("BasePart")
-		if currentModel and HUDFrame.Visible then
-			AngleY = (AngleY + dt * 45) % 360
-			local cf, size
-			if currentModel:IsA("Model") then cf, size = currentModel:GetBoundingBox() else cf, size = currentModel.CFrame, currentModel.Size end
-			local maxDim = math.max(size.X, size.Y, size.Z)
-			local dist = maxDim / (2 * math.tan(math.rad(Cam.FieldOfView / 2))) * 1.35
-			local rad = math.rad(AngleY)
-			Cam.CFrame = CFrame.new(cf.Position + Vector3.new(math.sin(rad) * dist, dist * 0.25, math.cos(rad) * dist), cf.Position)
+	-- TOGGLE MINIMIZE
+	local IsMinimized = false
+	MinBtn.MouseButton1Click:Connect(function()
+		IsMinimized = not IsMinimized
+		if IsMinimized then
+			WinFrame:TweenSize(UDim2.fromOffset(290, 32), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.25, true)
+			MinBtn.Text = "+"
+		else
+			WinFrame:TweenSize(UDim2.fromOffset(290, 420), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.25, true)
+			MinBtn.Text = "−"
 		end
 	end)
 
-	-- KONTEN INFO KANAN
-	local ContentFrame = New("Frame", {
-		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(58, 22),
-		Size = UDim2.new(1, -64, 0, 52),
-		Parent = HUDFrame,
+	-- =================================================================
+	-- 1. KOTAK TARGET PREVIEW ATAS (3D VIEWPORT + INFO BERTINGKAT)
+	-- =================================================================
+	local TargetCard = New("Frame", {
+		BackgroundColor3 = "BackgroundColor",
+		BackgroundTransparency = 0.35,
+		Size = UDim2.new(1, 0, 0, 78),
+		Parent = Container,
 	})
-	New("UIListLayout", {
-		FillDirection = Enum.FillDirection.Vertical,
-		Padding = UDim.new(0, 1),
-		Parent = ContentFrame,
-	})
+	table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = TargetCard }))
+	New("UIStroke", { Color = "OutlineColor", Thickness = 1, Parent = TargetCard })
 
-	local TargetNameLbl = New("TextLabel", {
+	local Viewport3D = New("ViewportFrame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(6, 6),
+		Size = UDim2.fromOffset(66, 66),
+		LightColor = Color3.fromRGB(255, 255, 255),
+		Ambient = Color3.fromRGB(190, 190, 190),
+		LightDirection = Vector3.new(-1, 2, -1),
+		Parent = TargetCard,
+	})
+	local Cam3D = Instance.new("Camera")
+	Cam3D.FieldOfView = 50
+	Cam3D.Parent = Viewport3D
+	Viewport3D.CurrentCamera = Cam3D
+	local World3D = Instance.new("WorldModel")
+	World3D.Parent = Viewport3D
+
+	local TargetInfoBox = New("Frame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(78, 6),
+		Size = UDim2.new(1, -84, 1, -12),
+		Parent = TargetCard,
+	})
+	New("UIListLayout", { FillDirection = Enum.FillDirection.Vertical, Padding = UDim.new(0, 1), Parent = TargetInfoBox })
+
+	local TxtName = New("TextLabel", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 16),
 		Text = "No Target Active",
-		TextSize = 12,
+		TextSize = 13,
 		RichText = true,
 		Font = Enum.Font.GothamBold,
-		TextColor3 = Color3.fromRGB(240, 240, 240),
+		TextColor3 = Color3.fromRGB(255, 255, 255),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
-		Parent = ContentFrame,
+		Parent = TargetInfoBox,
 	})
-
-	local StatusDetailLbl = New("TextLabel", {
+	local TxtIncome = New("TextLabel", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 14),
-		Text = "Status: Idle",
+		Text = "<font color=\"#57F287\"><b>+$0/s</b></font>",
+		TextSize = 11,
+		RichText = true,
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = TargetInfoBox,
+	})
+	local TxtStats = New("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 14),
+		Text = "1.00x · 0 Kg",
 		TextSize = 10,
 		RichText = true,
+		TextColor3 = Color3.fromRGB(205, 230, 255),
 		Font = Enum.Font.Gotham,
-		TextColor3 = Color3.fromRGB(180, 180, 190),
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		Parent = ContentFrame,
+		Parent = TargetInfoBox,
 	})
-
-	local BadgesContainer = New("Frame", {
+	local TxtDist = New("TextLabel", {
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 16),
-		Parent = ContentFrame,
-	})
-	local BadgesLayout = New("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 4),
-		Parent = BadgesContainer,
+		Size = UDim2.new(1, 0, 0, 14),
+		Text = "Standby (Idle)",
+		TextSize = 10,
+		RichText = true,
+		TextColor3 = Color3.fromRGB(160, 160, 180),
+		Font = Enum.Font.Gotham,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = TargetInfoBox,
 	})
 
-	-- OBJECT CONTROLLER BERSIH
-	local HUDController = {
-		Frame = HUDFrame,
-		Type = "LiveHUD",
+	-- ROTASI 3D VIEWPORT OTOMATIS
+	local CurAngle = 0
+	game:GetService("RunService").RenderStepped:Connect(function(dt)
+		local petModel = World3D:FindFirstChildWhichIsA("Model") or World3D:FindFirstChildWhichIsA("BasePart")
+		if WinFrame.Visible and not IsMinimized and petModel then
+			CurAngle = (CurAngle + dt * 45) % 360
+			local cf, size
+			if petModel:IsA("Model") then cf, size = petModel:GetBoundingBox() else cf, size = petModel.CFrame, petModel.Size end
+			local maxDim = math.max(size.X, size.Y, size.Z)
+			local dist = maxDim / (2 * math.tan(math.rad(Cam3D.FieldOfView / 2))) * 1.35
+			local rad = math.rad(CurAngle)
+			Cam3D.CFrame = CFrame.new(cf.Position + Vector3.new(math.sin(rad) * dist, dist * 0.25, math.cos(rad) * dist), cf.Position)
+		end
+	end)
+
+	-- =================================================================
+	-- 2. HELPER BIKIN SECTION DIVIDER DENGAN TEKS PUTIH RESMI
+	-- =================================================================
+	local function AddSectionDivider(text)
+		local Div = New("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 18), Parent = Container })
+		local L1 = New("Frame", { BackgroundColor3 = "OutlineColor", BorderSizePixel = 0, Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(0.2, 0, 0, 1), Parent = Div })
+		local Lbl = New("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0.2, 0, 0, 0), Size = UDim2.new(0.6, 0, 1, 0), Text = string.upper(text), TextSize = 10, Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(240, 240, 240), Parent = Div })
+		local L2 = New("Frame", { BackgroundColor3 = "OutlineColor", BorderSizePixel = 0, Position = UDim2.new(0.8, 0, 0.5, 0), Size = UDim2.new(0.2, 0, 0, 1), Parent = Div })
+	end
+
+	-- =================================================================
+	-- 3. SECTION STATUS AKSI (STEALING, PLACING, HATCHING, TRAINING)
+	-- =================================================================
+	AddSectionDivider("LIVE BOT ACTIONS")
+	local ActionGrid = New("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 36), Parent = Container })
+	New("UIGridLayout", { CellPadding = UDim2.fromOffset(6, 4), CellSize = UDim2.new(0.5, -3, 0, 16), Parent = ActionGrid })
+
+	local ActionLabels = {}
+	for _, actName in ipairs({ "Stealing", "Placing", "Hatching", "Training" }) do
+		local actLbl = New("TextLabel", {
+			BackgroundColor3 = "BackgroundColor",
+			BackgroundTransparency = 0.5,
+			Size = UDim2.new(1, 0, 1, 0),
+			Text = "• " .. actName,
+			TextSize = 10,
+			Font = Enum.Font.GothamBold,
+			TextColor3 = Color3.fromRGB(160, 160, 170), -- Default putih/abu standar
+			Parent = ActionGrid,
+		})
+		table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = actLbl }))
+		ActionLabels[actName] = actLbl
+	end
+
+	-- =================================================================
+	-- 4. SECTION PROGRES & STATS (CASH, TOTAL EGGS, SPEED)
+	-- =================================================================
+	AddSectionDivider("PLAYER STATS")
+	local StatsGrid = New("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 42), Parent = Container })
+	New("UIGridLayout", { CellPadding = UDim2.fromOffset(6, 0), CellSize = UDim2.new(0.333, -4, 1, 0), Parent = StatsGrid })
+
+	local function CreateStatCard(title, defaultVal, colorVal)
+		local Card = New("Frame", { BackgroundColor3 = "BackgroundColor", BackgroundTransparency = 0.4, Parent = StatsGrid })
+		table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = Card }))
+		New("UIStroke", { Color = "OutlineColor", Thickness = 1, Parent = Card })
+		New("TextLabel", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 16), Text = title, TextSize = 9, Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(170, 170, 185), Parent = Card })
+		local ValLbl = New("TextLabel", { BackgroundTransparency = 1, Position = UDim2.fromOffset(0, 16), Size = UDim2.new(1, 0, 1, -16), Text = defaultVal, TextSize = 12, Font = Enum.Font.GothamBold, TextColor3 = colorVal or Color3.fromRGB(255, 255, 255), Parent = Card })
+		return ValLbl
+	end
+
+	local StatCash = CreateStatCard("MONEY", "$0", Color3.fromRGB(87, 242, 135))
+	local StatEggs = CreateStatCard("EGGS", "0", Color3.fromRGB(255, 170, 0))
+	local StatSpeed = CreateStatCard("SPEED", "16", Color3.fromRGB(79, 224, 255))
+
+	-- =================================================================
+	-- 5. SECTION QUICK TOGGLES (BERUPA BUTTON CARD BISA DI-KLIK LANGSUNG!)
+	-- =================================================================
+	AddSectionDivider("QUICK FEATURE TOGGLES")
+	local TogglesGrid = New("Frame", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 78), Parent = Container })
+	New("UIGridLayout", { CellPadding = UDim2.fromOffset(6, 6), CellSize = UDim2.new(0.5, -3, 0, 22), Parent = TogglesGrid })
+
+	local RegisteredToggles = {}
+
+	-- OBJECT CONTROLLER DASHBOARD
+	local Dashboard = {
+		Frame = WinFrame,
+		Container = Container,
+		Type = "DashboardWindow",
 	}
 
-	function HUDController:SetTarget(targetData, model3D)
+	function Dashboard:AddQuickToggle(name, getStateFunc, onToggleFunc)
+		local Btn = New("TextButton", {
+			BackgroundColor3 = "BackgroundColor",
+			BackgroundTransparency = 0.3,
+			Text = name .. " [OFF]",
+			TextSize = 10,
+			Font = Enum.Font.GothamBold,
+			TextColor3 = Color3.fromRGB(160, 160, 170),
+			Parent = TogglesGrid,
+		})
+		table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = Btn }))
+		local Stroke = New("UIStroke", { Color = "OutlineColor", Thickness = 1, Parent = Btn })
+
+		Btn.MouseButton1Click:Connect(function()
+			local curState = getStateFunc()
+			onToggleFunc(not curState)
+			Dashboard:RefreshToggles()
+		end)
+
+		table.insert(RegisteredToggles, {
+			Name = name,
+			Button = Btn,
+			Stroke = Stroke,
+			GetState = getStateFunc,
+		})
+
+		-- Sesuaikan tinggi container otomatis
+		TogglesGrid.Size = UDim2.new(1, 0, 0, math.ceil(#RegisteredToggles / 2) * 28)
+		UpdateCanvas()
+	end
+
+	function Dashboard:RefreshToggles()
+		for _, tog in ipairs(RegisteredToggles) do
+			local isOn = tog.GetState()
+			if isOn then
+				tog.Button.Text = tog.Name .. " [ON]"
+				tog.Button.TextColor3 = Color3.fromRGB(87, 242, 135)
+				tog.Stroke.Color = Color3.fromRGB(87, 242, 135)
+			else
+				tog.Button.Text = tog.Name .. " [OFF]"
+				tog.Button.TextColor3 = Color3.fromRGB(160, 160, 170)
+				tog.Stroke.Color = Library.Colors.OutlineColor or Color3.fromRGB(50, 50, 60)
+			end
+		end
+	end
+
+	function Dashboard:UpdateTarget(targetData, model3D)
 		if not targetData then
-			TargetNameLbl.Text = '<font color="#8A8AA2">No Target Active</font>'
-			StatusDetailLbl.Text = '<font color="#57F287">Status: Idle</font>'
-			World:ClearAllChildren()
+			TxtName.Text = '<font color="#8A8AA2">No Target Active</font>'
+			TxtIncome.Text = '<font color="#57F287">$0/s</font>'
+			TxtStats.Text = "Standby"
+			TxtDist.Text = "Status: Idle"
+			World3D:ClearAllChildren()
 			return
 		end
 
-		-- Format Nama & Rarity
-		local hexColor = targetData.Hex or "#FFFFFF"
-		TargetNameLbl.Text = string.format('<b>%s</b>  <font color="%s"><b>%s</b></font>', targetData.Name or "Egg", hexColor, string.upper(targetData.Rarity or ""))
+		local hex = targetData.Hex or "#FFFFFF"
+		TxtName.Text = string.format('<b>%s</b>  <font color="%s"><b>%s</b></font>', targetData.Name or "Egg", hex, string.upper(targetData.Rarity or ""))
+		TxtIncome.Text = string.format('<font color="#57F287"><b>+$%s/s</b></font>', targetData.Income or "0")
 		
-		local distText = targetData.Distance and string.format(" · %d studs", math.floor(targetData.Distance)) or ""
-		local valText = targetData.Income and string.format('<font color="#57F287">+$%s/s</font>', targetData.Income) or ""
-		StatusDetailLbl.Text = string.format("%s%s", valText, distText)
+		local mutTag = (targetData.Mutation and targetData.Mutation ~= "") and (' · <font color="#FFAA00">' .. targetData.Mutation .. '</font>') or ""
+		TxtStats.Text = string.format("%.2fx · %s Kg%s", targetData.Scale or 1, tostring(targetData.Weight or 0), mutTag)
+		TxtDist.Text = targetData.Distance and string.format("Target: %d studs away", math.floor(targetData.Distance)) or "Locked on target"
 
-		-- Update Model 3D di Viewport
 		if model3D then
-			World:ClearAllChildren()
+			World3D:ClearAllChildren()
 			local clone = model3D:Clone()
 			if clone:IsA("Folder") then
 				local tempM = Instance.new("Model")
-				for _, ch in ipairs(clone:GetChildren()) do
-					if ch:IsA("BasePart") or ch:IsA("Model") then ch:Clone().Parent = tempM end
-				end
+				for _, ch in ipairs(clone:GetChildren()) do if ch:IsA("BasePart") or ch:IsA("Model") then ch:Clone().Parent = tempM end end
 				clone:Destroy()
 				clone = tempM
 			end
@@ -12349,53 +12516,35 @@ function Library:CreateLiveHUD(Info)
 				if desc:IsA("LuaSourceContainer") or desc:IsA("Sound") then desc:Destroy() end
 			end
 			if clone:IsA("BasePart") then clone.Anchored = true end
-			clone.Parent = World
+			clone.Parent = World3D
 		end
 	end
 
-	function HUDController:SetStatus(statusText, isRunning)
-		StatusDetailLbl.Text = statusText or ""
-		StatusDot.BackgroundColor3 = isRunning and Color3.fromRGB(255, 170, 0) or Color3.fromRGB(87, 242, 135)
-	end
-
-	function HUDController:UpdateToggles(activeBadgeMap)
-		-- activeBadgeMap = { STEAL = true, HATCH = true, TRAP = true }
-		for _, ch in ipairs(BadgesContainer:GetChildren()) do
-			if ch:IsA("Frame") then ch:Destroy() end
-		end
-
-		for name, isActive in pairs(activeBadgeMap) do
-			if isActive then
-				local pill = New("Frame", {
-					BackgroundColor3 = "BackgroundColor",
-					BackgroundTransparency = 0.2,
-					Size = UDim2.fromOffset(0, 14),
-					AutomaticSize = Enum.AutomaticSize.X,
-					Parent = BadgesContainer,
-				})
-				table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, 4), Parent = pill }))
-				New("UIStroke", { Color = "OutlineColor", Thickness = 1, Parent = pill })
-				New("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4), Parent = pill })
-				
-				New("TextLabel", {
-					BackgroundTransparency = 1,
-					Size = UDim2.new(1, 0, 1, 0),
-					AutomaticSize = Enum.AutomaticSize.X,
-					Text = string.upper(name),
-					TextSize = 8,
-					Font = Enum.Font.GothamBold,
-					TextColor3 = Color3.fromRGB(255, 170, 0),
-					Parent = pill,
-				})
+	function Dashboard:UpdateActions(actionsMap)
+		-- actionsMap = { Stealing = true/false, Placing = true/false, Hatching = true/false, Training = true/false }
+		for actName, isRunning in pairs(actionsMap) do
+			local lbl = ActionLabels[actName]
+			if lbl then
+				if isRunning then
+					lbl.TextColor3 = Color3.fromRGB(87, 242, 135) -- HIJAU TEBAL KALAU LAGI JALAN
+					lbl.Text = "✔ " .. actName
+				else
+					lbl.TextColor3 = Color3.fromRGB(160, 160, 170) -- PUTIH/ABU STANDAR KALAU MATI
+					lbl.Text = "• " .. actName
+				end
 			end
 		end
 	end
 
-	function HUDController:SetVisible(val)
-		HUDFrame.Visible = val
+	function Dashboard:UpdateStats(statsMap)
+		-- statsMap = { Cash = "$1.3Qa", Eggs = "4 (2/2)", Speed = "350" }
+		if statsMap.Cash then StatCash.Text = statsMap.Cash end
+		if statsMap.Eggs then StatEggs.Text = statsMap.Eggs end
+		if statsMap.Speed then StatSpeed.Text = statsMap.Speed end
 	end
 
-	return HUDController
+	UpdateCanvas()
+	return Dashboard
 end
 
 function Library:CreateLoading(LoadingInfo)
